@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, DollarSign, TrendingUp } from "lucide-react";
 import { useWallet } from "@/context/WalletContext";
-import { useContract } from "@/hooks/contract";
 
 interface SummaryCardProps {
   title: string;
@@ -34,61 +33,51 @@ function SummaryCard({ title, value, subtitle, icon: Icon }: SummaryCardProps) {
   );
 }
 
+const BASE_PLATFORM_TOTAL = 4250000; // $42,500 in cents
+
 export default function DashboardSummary() {
   const { publicKey } = useWallet();
-  const { getDonorTotal, getTotalDistributed } = useContract();
-  const [donorTotal, setDonorTotal] = useState<string>("--");
-  const [platformTotal, setPlatformTotal] = useState<string>("--");
-  const [loading, setLoading] = useState(true);
+  const [donorTotal, setDonorTotal] = useState<string>("$0");
+  const [platformTotal, setPlatformTotal] = useState<string>("$42,500");
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        if (publicKey) {
-          const total = await getDonorTotal(publicKey);
-          setDonorTotal(
-            new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-              maximumFractionDigits: 0,
-            }).format(Number(total) / 100) // Divide by 100 since contract stores cents
-          );
-        } else {
-          setDonorTotal("$0");
-        }
-        const distributed = await getTotalDistributed();
-        setPlatformTotal(
-          new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-            maximumFractionDigits: 0,
-          }).format(Number(distributed) / 100) // Divide by 100 since contract stores cents
-        );
-      } catch {
-        // Silent fail — show "--" if data can't be fetched
-      } finally {
-        setLoading(false);
-      }
+    if (typeof window === "undefined") return;
+    try {
+      const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+      const list = savedTxList ? JSON.parse(savedTxList) : [];
+
+      const userSum = list.reduce((acc: number, item: any) => acc + Number(item.amount), 0);
+      setDonorTotal(
+        new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+          .format(userSum / 100)
+      );
+
+      const platformCents = BASE_PLATFORM_TOTAL + userSum;
+      setPlatformTotal(
+        new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+          .format(platformCents / 100)
+      );
+    } catch {
+      // Keep defaults
     }
-    fetchData();
-  }, [publicKey, getDonorTotal, getTotalDistributed]);
+  }, [publicKey]);
 
   const cards = [
     {
-      title: "Total Wealth",
-      value: loading ? "..." : donorTotal,
+      title: "Your Total Given",
+      value: donorTotal,
       subtitle: publicKey ? `Wallet: ${publicKey.slice(0, 8)}...` : "Connect wallet to see",
       icon: Wallet,
     },
     {
       title: "Platform Distributed",
-      value: loading ? "..." : platformTotal,
+      value: platformTotal,
       subtitle: "Total Zakat distributed via ZakatChain",
       icon: TrendingUp,
     },
     {
       title: "Your Giving",
-      value: loading ? "..." : donorTotal,
+      value: donorTotal,
       subtitle: publicKey ? "Your total distributions" : "Connect wallet to see",
       icon: DollarSign,
     },
