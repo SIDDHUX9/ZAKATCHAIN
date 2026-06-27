@@ -1,65 +1,88 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #059669;
-  --color-primary-hover: #047857;
-  --color-primary-light: #d1fae5;
-  --color-secondary: #fffbf5;
-  --color-text-main: #1f2937;
-  --color-text-muted: #6b7280;
-  --color-accent: #d97706;
-  --color-accent-hover: #b45309;
-  --color-error: #dc2626;
-  --color-border: #e5e7eb;
-  --color-card-bg: #ffffff;
-  --color-sidebar-bg: #fafafa;
-  --font-sans: "Inter", "Geist", system-ui, sans-serif;
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-text-main: var(--foreground);
+  --color-text-muted: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-error: var(--destructive);
+  --color-border: var(--border);
+  --color-card-bg: var(--card);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --font-sans: "Outfit", "Inter", "Geist", system-ui, sans-serif;
   --font-serif: "Newsreader", "Georgia", serif;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #1f2937;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #1f2937;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1f2937;
-  --primary: #059669;
+  --popover-foreground: #0f172a;
+  
+  /* Rich Teal Emerald Primary */
+  --primary: #0f766e;
+  --primary-hover: #115e59;
+  --primary-light: #ccfbf1;
   --primary-foreground: #ffffff;
-  --secondary: #fffbf5;
-  --secondary-foreground: #1f2937;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
+  
+  /* Soft Sand/Gold Secondary */
+  --secondary: #fef3c7;
+  --secondary-foreground: #78350f;
+  
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  
+  /* Amber/Gold Accent */
   --accent: #d97706;
+  --accent-hover: #b45309;
   --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  
+  --destructive: #e11d48;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #059669;
-  --radius: 0.75rem;
+  
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #0f766e;
+  --radius: 1rem;
+  --sidebar-bg: #ffffff;
 }
 
 .dark {
-  --background: #111827;
-  --foreground: #f3f4f6;
-  --card: #1f2937;
-  --card-foreground: #f3f4f6;
-  --popover: #1f2937;
-  --popover-foreground: #f3f4f6;
-  --primary: #059669;
-  --primary-foreground: #ffffff;
-  --secondary: #1f2937;
-  --secondary-foreground: #f3f4f6;
-  --muted: #374151;
+  --background: #0b0f19;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  
+  --primary: #14b8a6;
+  --primary-hover: #2dd4bf;
+  --primary-light: #112d2f;
+  --primary-foreground: #0b0f19;
+  
+  --secondary: #272015;
+  --secondary-foreground: #fde68a;
+  
+  --muted: #1f2937;
   --muted-foreground: #9ca3af;
-  --accent: #d97706;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+  
+  --accent: #f59e0b;
+  --accent-hover: #fbbf24;
+  --accent-foreground: #0b0f19;
+  
+  --destructive: #f43f5e;
   --destructive-foreground: #ffffff;
-  --border: #374151;
-  --input: #374151;
-  --ring: #059669;
+  
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #14b8a6;
+  --sidebar-bg: #0b0f19;
 }
 
 * {
@@ -72,11 +95,58 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.02em;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Soft gradients */
+.gradient-primary {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+}
+
+.dark .gradient-primary {
+  background: linear-gradient(135deg, #112d2f 0%, #0f766e 100%);
+}
+
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+/* Card hover glow */
+.card-glow {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-glow:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px -10px rgba(15, 118, 110, 0.2);
+}
+
+.dark .card-glow:hover {
+  box-shadow: 0 12px 30px -10px rgba(20, 184, 166, 0.15);
 }
 
 @layer base {
@@ -89,6 +159,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
+

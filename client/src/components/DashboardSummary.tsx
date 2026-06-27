@@ -51,8 +51,10 @@ export default function DashboardSummary() {
               style: "currency",
               currency: "USD",
               maximumFractionDigits: 0,
-            }).format(Number(total))
+            }).format(Number(total) / 100) // Divide by 100 since contract stores cents
           );
+        } else {
+          setDonorTotal("$0");
         }
         const distributed = await getTotalDistributed();
         setPlatformTotal(
@@ -60,7 +62,7 @@ export default function DashboardSummary() {
             style: "currency",
             currency: "USD",
             maximumFractionDigits: 0,
-          }).format(Number(distributed))
+          }).format(Number(distributed) / 100) // Divide by 100 since contract stores cents
         );
       } catch {
         // Silent fail — show "--" if data can't be fetched

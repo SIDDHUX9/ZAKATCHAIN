@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ExternalLink, Download, Search, Filter } from "lucide-react";
+import { ExternalLink, Download, Search, Filter, History } from "lucide-react";
+import { useWallet } from "@/context/WalletContext";
 
 interface Transaction {
   date: string;
@@ -16,35 +17,60 @@ interface Transaction {
   status: "success" | "pending" | "failed";
 }
 
-const MOCK_TRANSACTIONS: Transaction[] = [
-  {
-    date: "2026-06-25",
-    type: "Distribution",
-    amount: "$1,250.00",
-    beneficiaries: "The Poor, The Needy, Wayfarers",
-    txHash: "abc123def456",
-    status: "success",
-  },
-  {
-    date: "2026-06-20",
-    type: "Distribution",
-    amount: "$3,500.00",
-    beneficiaries: "The Debt-Ridden, In the Cause of Allah",
-    txHash: "ghi789jkl012",
-    status: "success",
-  },
-];
-
 const STATUS_FILTERS = ["all", "success", "pending", "failed"] as const;
 
 export default function HistoryPage() {
+  const { publicKey, isDemo } = useWallet();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  useEffect(() => {
+    // Load local distributions
+    const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+    let list = savedTxList ? JSON.parse(savedTxList) : [];
+
+    // Map list
+    let mappedList = list.map((item: any) => ({
+      date: item.date,
+      type: "Zakat Distribution",
+      amount: new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(Number(item.amount) / 100),
+      beneficiaries: item.beneficiaries,
+      txHash: item.txHash,
+      status: item.status as "success" | "pending" | "failed",
+    }));
+
+    // If empty, add mock transactions so it looks populated
+    if (mappedList.length === 0) {
+      mappedList = [
+        {
+          date: "2026-06-25",
+          type: "Zakat Distribution",
+          amount: "$1,250.00",
+          beneficiaries: "The Poor, The Needy, Wayfarers",
+          txHash: "tx_kh2j5k2l",
+          status: "success",
+        },
+        {
+          date: "2026-06-20",
+          type: "Zakat Distribution",
+          amount: "$3,500.00",
+          beneficiaries: "The Debt-Ridden, In the Cause of Allah",
+          txHash: "tx_m3n4b5v6",
+          status: "success",
+        },
+      ];
+    }
+    setTransactions(mappedList);
+  }, [publicKey, isDemo]);
+
   const filtered = useMemo(() => {
-    return MOCK_TRANSACTIONS.filter((tx) => {
+    return transactions.filter((tx) => {
       if (statusFilter !== "all" && tx.status !== statusFilter) return false;
       if (search && !tx.txHash.toLowerCase().includes(search.toLowerCase()) &&
           !tx.beneficiaries.toLowerCase().includes(search.toLowerCase())) {
@@ -54,7 +80,7 @@ export default function HistoryPage() {
       if (dateTo && tx.date > dateTo) return false;
       return true;
     });
-  }, [search, statusFilter, dateFrom, dateTo]);
+  }, [transactions, search, statusFilter, dateFrom, dateTo]);
 
   const exportCsv = () => {
     const headers = "Date,Type,Amount,Beneficiaries,TX Hash,Status\n";
@@ -190,15 +216,21 @@ export default function HistoryPage() {
                           {tx.beneficiaries}
                         </td>
                         <td className="p-4">
-                          <a
-                            href={`https://stellar.expert/explorer/testnet/tx/${tx.txHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-sm text-primary hover:underline"
-                          >
-                            {tx.txHash.slice(0, 8)}...
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
+                          {tx.txHash.startsWith("tx_") ? (
+                            <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20" title="Sandbox Local Log">
+                              {tx.txHash.slice(0, 8)}... (Sandbox)
+                            </span>
+                          ) : (
+                            <a
+                              href={`https://stellar.expert/explorer/testnet/tx/${tx.txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-sm text-primary hover:underline"
+                            >
+                              {tx.txHash.slice(0, 8)}...
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
                         </td>
                         <td className="p-4 text-center">
                           <Badge

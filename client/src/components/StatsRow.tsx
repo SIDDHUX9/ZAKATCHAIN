@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Coins, Users, Heart } from "lucide-react";
-import { Client, networks } from "contract";
+import { useContract } from "@/hooks/contract";
 
 interface Stats {
   totalDistributed: string;
@@ -11,6 +11,7 @@ interface Stats {
 }
 
 export default function StatsRow() {
+  const { getPlatformStats } = useContract();
   const [stats, setStats] = useState<Stats>({
     totalDistributed: "...",
     activeDonors: "...",
@@ -20,26 +21,16 @@ export default function StatsRow() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const client = new Client({
-          contractId: networks.testnet.contractId,
-          networkPassphrase: networks.testnet.networkPassphrase,
-          rpcUrl: "https://soroban-testnet.stellar.org",
-        });
-
-        const [total, donors, beneficiaries] = await Promise.all([
-          client.get_total_distributed().catch(() => ({ result: BigInt(0) })),
-          client.get_donor_count().catch(() => ({ result: BigInt(0) })),
-          client.get_beneficiary_count().catch(() => ({ result: BigInt(0) })),
-        ]);
+        const platformStats = await getPlatformStats();
 
         setStats({
           totalDistributed: new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: "USD",
             maximumFractionDigits: 0,
-          }).format(Number(total.result)),
-          activeDonors: Number(donors.result).toLocaleString(),
-          beneficiaries: Number(beneficiaries.result).toLocaleString(),
+          }).format(Number(platformStats.totalDistributed) / 100), // Dividing by 100 for cents conversion
+          activeDonors: Number(platformStats.donorCount).toLocaleString(),
+          beneficiaries: Number(platformStats.beneficiaryCount).toLocaleString(),
         });
       } catch {
         setStats({
@@ -50,7 +41,7 @@ export default function StatsRow() {
       }
     }
     fetchStats();
-  }, []);
+  }, [getPlatformStats]);
 
   const items = [
     {

@@ -24,7 +24,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { publicKey, disconnectWallet } = useWallet();
+  const { publicKey, disconnectWallet, isDemo } = useWallet();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r bg-sidebar-bg min-h-screen">
@@ -63,18 +63,21 @@ export default function Sidebar() {
 
       <div className="p-4 border-t space-y-3">
         {publicKey && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted">
-            <Wallet className="w-4 h-4 text-text-muted" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-text-muted truncate">
-                {publicKey.slice(0, 8)}...{publicKey.slice(-4)}
-              </p>
+          <div className="flex flex-col gap-2 p-3 rounded-lg bg-muted border">
+            <div className="flex items-center gap-2">
+              <div className={cn("w-2 h-2 rounded-full animate-pulse", isDemo ? "bg-amber-500" : "bg-emerald-500")} />
+              <span className="text-xs font-bold text-text-muted capitalize">
+                {isDemo ? "Demo Sandbox" : "Testnet Wallet"}
+              </span>
             </div>
+            <p className="text-xs font-mono text-text-muted truncate select-all" title={publicKey}>
+              {publicKey}
+            </p>
           </div>
         )}
         <button
           onClick={disconnectWallet}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-muted hover:bg-muted hover:text-destructive transition-colors w-full"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-text-muted hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-destructive transition-colors w-full"
         >
           <LogOut className="w-4 h-4" />
           Disconnect

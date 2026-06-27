@@ -17,7 +17,7 @@ function getClient(publicKey: string | null, signTransaction: (xdr: string) => P
 }
 
 export function useContract() {
-  const { publicKey, signTransaction } = useWallet();
+  const { publicKey, signTransaction, isDemo } = useWallet();
   const clientRef = useRef<Client | null>(null);
 
   const getClientInstance = useCallback(() => {
@@ -28,6 +28,7 @@ export function useContract() {
   }, [publicKey, signTransaction]);
 
   const initContract = useCallback(async () => {
+    if (isDemo) return null;
     const client = getClientInstance();
     const tx = await client.init();
     if (publicKey) {
@@ -35,7 +36,7 @@ export function useContract() {
       return result.result;
     }
     return null;
-  }, [getClientInstance, publicKey]);
+  }, [getClientInstance, publicKey, isDemo]);
 
   const recordDistribution = useCallback(
     async (
@@ -44,6 +45,23 @@ export function useContract() {
       beneficiaries: string,
       txHash: string
     ) => {
+      if (isDemo) {
+        // Save mock transaction to local storage
+        const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+        const list = savedTxList ? JSON.parse(savedTxList) : [];
+        const newTx = {
+          date: new Date().toISOString().split("T")[0],
+          type: "Distribution",
+          amount: totalAmount.toString(), // Store as string representation of cents
+          beneficiaries,
+          txHash,
+          status: "success",
+        };
+        list.unshift(newTx);
+        localStorage.setItem("zakatchain_demo_distributions", JSON.stringify(list));
+        return { result: null };
+      }
+
       const client = getClientInstance();
       const tx = await client.record_distribution({
         donor,
@@ -54,35 +72,63 @@ export function useContract() {
       const result = await tx.signAndSend();
       return result;
     },
-    [getClientInstance]
+    [getClientInstance, isDemo]
   );
 
   const getDonorTotal = useCallback(
     async (donor: string): Promise<bigint> => {
+      if (isDemo) {
+        const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+        const list = savedTxList ? JSON.parse(savedTxList) : [];
+        const sum = list.reduce((acc: number, item: any) => {
+          return acc + Number(item.amount);
+        }, 0);
+        return BigInt(sum);
+      }
       const client = getClientInstance();
       const tx = await client.get_donor_total({ donor });
       return tx.result;
     },
-    [getClientInstance]
+    [getClientInstance, isDemo]
   );
 
   const getTotalDistributed = useCallback(async (): Promise<bigint> => {
+    if (isDemo) {
+      const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+      const list = savedTxList ? JSON.parse(savedTxList) : [];
+      const sum = list.reduce((acc: number, item: any) => acc + Number(item.amount), 0);
+      // Start with a mock base of $42,500.00 (in cents = 4250000)
+      return BigInt(4250000 + sum);
+    }
     const client = getClientInstance();
     const tx = await client.get_total_distributed();
     return tx.result;
-  }, [getClientInstance]);
+  }, [getClientInstance, isDemo]);
 
   const getDonorCount = useCallback(async (): Promise<bigint> => {
+    if (isDemo) {
+      // 12 mock base + 1 if demo user has distributed
+      const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+      const list = savedTxList ? JSON.parse(savedTxList) : [];
+      const hasDistributed = list.length > 0 ? 1 : 0;
+      return BigInt(12 + hasDistributed);
+    }
     const client = getClientInstance();
     const tx = await client.get_donor_count();
     return tx.result;
-  }, [getClientInstance]);
+  }, [getClientInstance, isDemo]);
 
   const getBeneficiaryCount = useCallback(async (): Promise<bigint> => {
+    if (isDemo) {
+      // 88 mock base + count of transactions
+      const savedTxList = localStorage.getItem("zakatchain_demo_distributions");
+      const list = savedTxList ? JSON.parse(savedTxList) : [];
+      return BigInt(88 + list.length);
+    }
     const client = getClientInstance();
     const tx = await client.get_beneficiary_count();
     return tx.result;
-  }, [getClientInstance]);
+  }, [getClientInstance, isDemo]);
 
   const getPlatformStats = useCallback(async () => {
     const [totalDistributed, donorCount, beneficiaryCount] = await Promise.all([

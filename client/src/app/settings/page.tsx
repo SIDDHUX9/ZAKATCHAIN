@@ -5,8 +5,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useWallet } from "@/context/WalletContext";
-import { Wallet, LogOut, Bell, Palette, Currency, Copy, CheckCircle2 } from "lucide-react";
+import { Wallet, LogOut, Bell, Palette, Currency, Copy, CheckCircle2, Shield } from "lucide-react";
 
 const CURRENCIES = [
   { value: "USD", label: "USD ($)" },
@@ -17,7 +18,7 @@ const CURRENCIES = [
 ];
 
 export default function SettingsPage() {
-  const { publicKey, disconnectWallet, connectWallet } = useWallet();
+  const { publicKey, disconnectWallet, connectWallet, connectDemoWallet, isDemo } = useWallet();
   const [currency, setCurrency] = useState("USD");
   const [email, setEmail] = useState("");
   const [darkMode, setDarkMode] = useState(false);
@@ -38,60 +39,76 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="container-main py-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold tracking-tight mb-2">Settings</h1>
-        <p className="text-text-muted text-sm mb-8">
-          Manage your wallet, preferences, and notifications
-        </p>
+    <div className="container-main py-8 max-w-3xl">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">Settings</h1>
+          <p className="text-text-muted text-sm mt-1">
+            Manage your account wallet connection, local currency settings, and preferences
+          </p>
+        </div>
 
         {/* Wallet Management */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="w-5 h-5" />
-              Wallet Management
+        <Card className="shadow-sm rounded-2xl">
+          <CardHeader className="border-b px-6 py-5">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-primary" />
+              Wallet Settings
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 space-y-4">
             {publicKey ? (
               <>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted">
-                  <div className="space-y-1">
-                    <p className="text-xs text-text-muted">Connected Wallet</p>
-                    <p className="text-sm font-mono">{publicKey}</p>
+                <div className="flex flex-col gap-2 p-4 rounded-xl bg-muted border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-text-muted capitalize">
+                      {isDemo ? "Demo Sandbox Account" : "Connected Testnet Wallet"}
+                    </span>
+                    <Badge variant={isDemo ? "secondary" : "success"} className="text-[10px] uppercase font-bold">
+                      {isDemo ? "Demo" : "Live"}
+                    </Badge>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={copyAddress}
-                    title="Copy address"
-                  >
-                    {copied ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
+                  <div className="flex items-center justify-between gap-3 mt-1">
+                    <p className="text-xs font-mono text-text-muted truncate select-all">{publicKey}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyAddress}
+                      className="h-8 w-8 rounded-lg"
+                      title="Copy Address"
+                    >
+                      {copied ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <Button
                   variant="destructive"
                   onClick={disconnectWallet}
-                  className="gap-2"
+                  className="gap-2 rounded-lg text-sm"
                 >
                   <LogOut className="w-4 h-4" />
                   Disconnect Wallet
                 </Button>
               </>
             ) : (
-              <div className="text-center py-6">
-                <p className="text-text-muted mb-4">
-                  No wallet connected. Connect Freighter to get started.
+              <div className="text-center py-8 space-y-4">
+                <p className="text-text-muted text-sm">
+                  No wallet currently linked to ZakatChain. Choose a connection option:
                 </p>
-                <Button onClick={connectWallet} className="gap-2">
-                  <Wallet className="w-4 h-4" />
-                  Connect Wallet
-                </Button>
+                <div className="flex flex-col sm:flex-row justify-center gap-3">
+                  <Button onClick={connectWallet} className="gap-2 rounded-lg bg-primary text-white font-bold">
+                    <Wallet className="w-4 h-4" />
+                    Connect Freighter Wallet
+                  </Button>
+                  <Button variant="outline" onClick={connectDemoWallet} className="gap-2 rounded-lg font-bold border-border/80">
+                    <Shield className="w-4 h-4 text-accent" />
+                    Use Demo Sandbox Wallet
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
