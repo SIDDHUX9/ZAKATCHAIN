@@ -9,9 +9,8 @@ interface Stats {
   beneficiaries: string;
 }
 
-// Static base values — augmented by demo transactions from localStorage
 const BASE_STATS = {
-  totalDistributed: 4250000, // $42,500 in cents
+  totalDistributed: 4250000,
   activeDonors: 12,
   beneficiaries: 88,
 };
@@ -51,24 +50,49 @@ export default function StatsRow() {
   }, []);
 
   const items = [
-    { icon: Coins, label: "Total Distributed", value: stats.totalDistributed },
-    { icon: Users, label: "Active Donors", value: stats.activeDonors },
-    { icon: Heart, label: "Beneficiaries Helped", value: stats.beneficiaries },
+    {
+      icon: Coins,
+      label: "Total Distributed",
+      value: stats.totalDistributed,
+      color: "text-teal-600 dark:text-teal-400",
+      bg: "bg-teal-500/8",
+    },
+    {
+      icon: Users,
+      label: "Active Donors",
+      value: stats.activeDonors,
+      color: "text-cyan-600 dark:text-cyan-400",
+      bg: "bg-cyan-500/8",
+    },
+    {
+      icon: Heart,
+      label: "Beneficiaries Helped",
+      value: stats.beneficiaries,
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-500/8",
+    },
   ];
 
   return (
-    <section className="py-12 bg-card border-y">
+    <section className="py-16 border-y bg-card/50">
       <div className="container-main">
-        <div className="grid md:grid-cols-3 gap-8">
-          {items.map((item) => {
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-10">
+          {items.map((item, i) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className="text-center p-6 rounded-xl">
-                <Icon className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="text-3xl font-bold tracking-tight mb-1">
-                  {item.value}
-                </p>
-                <p className="text-sm text-text-muted">{item.label}</p>
+              <div
+                key={item.label}
+                className={`animate-fade-up delay-${(i + 1) * 100} flex items-center gap-5 p-6 rounded-2xl border bg-card shadow-sm card-hover`}
+              >
+                <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`w-5 h-5 ${item.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tracking-tight">
+                    {item.value}
+                  </p>
+                  <p className="text-xs text-text-muted font-medium mt-0.5">{item.label}</p>
+                </div>
               </div>
             );
           })}

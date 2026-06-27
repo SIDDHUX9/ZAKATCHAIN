@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useWallet } from "@/context/WalletContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,15 @@ import { Wallet, LogOut, Menu, X, Shield, ArrowRight, Activity } from "lucide-re
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/calculate", label: "Calculate" },
+  { href: "/distribute", label: "Distribute" },
+];
+
 export default function Navbar() {
+  const pathname = usePathname();
   const {
     publicKey,
     connectWallet,
@@ -34,72 +43,64 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-card/85 backdrop-blur-md">
-      <div className="container-main flex items-center justify-between h-16">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-            <span className="text-primary-foreground font-black text-base">Z</span>
+    <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-xl">
+      <div className="container-main flex items-center justify-between h-[60px]">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm transition-transform duration-200 group-hover:scale-105">
+            <span className="text-primary-foreground font-bold text-sm">Z</span>
           </div>
-          <span className="font-extrabold text-xl tracking-tight text-gradient">
+          <span className="font-bold text-lg tracking-tight text-gradient">
             ZakatChain
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          <Link
-            href="/"
-            className="text-sm font-semibold text-text-muted hover:text-primary transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold text-text-muted hover:text-primary transition-colors"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/calculate"
-            className="text-sm font-semibold text-text-muted hover:text-primary transition-colors"
-          >
-            Calculate
-          </Link>
-          <Link
-            href="/distribute"
-            className="text-sm font-semibold text-text-muted hover:text-primary transition-colors"
-          >
-            Distribute
-          </Link>
+        {/* Nav links */}
+        <nav className="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200",
+                pathname === link.href
+                  ? "text-primary bg-primary/8"
+                  : "text-text-muted hover:text-text-main hover:bg-muted/50"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        {/* Actions */}
+        <div className="flex items-center gap-2.5">
           {publicKey ? (
             <>
-              <Badge
-                variant={isDemo ? "secondary" : "success"}
+              <div
                 className={cn(
-                  "hidden sm:inline-flex gap-1.5 py-1 px-3 items-center rounded-full font-medium border text-xs shadow-sm",
+                  "hidden sm:flex items-center gap-2 py-1.5 px-3.5 rounded-full text-xs font-medium border shadow-sm",
                   isDemo
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25"
-                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25"
+                    ? "bg-amber-500/8 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    : "bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                 )}
               >
                 <div
                   className={cn(
-                    "w-2 h-2 rounded-full animate-pulse",
+                    "w-1.5 h-1.5 rounded-full animate-pulse",
                     isDemo ? "bg-amber-500" : "bg-emerald-500"
                   )}
                 />
-                {isDemo ? "Demo" : "Testnet"}: {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
-              </Badge>
+                {isDemo ? "Demo" : "Testnet"}: {publicKey.slice(0, 4)}...{publicKey.slice(-4)}
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={disconnectWallet}
-                className="hidden sm:flex hover:bg-destructive/10 hover:text-destructive rounded-lg"
+                className="hidden sm:flex h-8 w-8 rounded-lg hover:bg-destructive/8 hover:text-destructive"
                 title="Disconnect"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </Button>
             </>
           ) : (
@@ -107,54 +108,50 @@ export default function Navbar() {
               onClick={() => setConnectOpen(true)}
               disabled={isConnecting}
               size="sm"
-              className="hidden sm:inline-flex gap-2 shadow-sm rounded-lg"
+              className="hidden sm:inline-flex gap-2 rounded-xl shadow-sm text-xs font-semibold px-4"
             >
-              <Wallet className="w-4 h-4" />
+              <Wallet className="w-3.5 h-3.5" />
               {isConnecting ? "Connecting..." : "Connect Wallet"}
             </Button>
           )}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-muted"
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       {error && (
         <div className="container-main pb-3">
-          <p className="text-sm text-error bg-red-50 dark:bg-red-950/20 px-4 py-2 rounded-lg border border-red-200/50">
+          <p className="text-xs text-destructive bg-destructive/5 px-4 py-2 rounded-lg border border-destructive/10">
             {error}
           </p>
         </div>
       )}
 
-      {/* Wallet Connection Modal */}
+      {/* Connect Dialog */}
       <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Connect your Wallet</DialogTitle>
+          <DialogTitle className="text-lg font-bold">Connect Wallet</DialogTitle>
           <DialogDescription className="text-sm">
-            Select a connection method to access ZakatChain dashboard and calculations.
+            Choose how you'd like to access ZakatChain.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 py-4">
+        <div className="grid gap-3 py-5">
           <button
             onClick={handleConnectFreighter}
-            className="flex items-center justify-between p-4 rounded-xl border bg-card hover:border-primary hover:bg-primary-light/5 dark:hover:bg-primary-light/2 transition-all text-left group"
+            className="flex items-center justify-between p-5 rounded-2xl border bg-card hover:border-primary/40 transition-all duration-200 text-left group"
           >
             <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-primary-light dark:bg-primary-light/10 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center text-primary transition-transform duration-200 group-hover:scale-110">
                 <Wallet className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-sm text-text-main">Freighter Wallet</p>
-                <p className="text-xs text-text-muted">Use Stellar Freighter browser extension</p>
+                <p className="font-semibold text-sm">Freighter Wallet</p>
+                <p className="text-xs text-text-muted mt-0.5">Stellar browser extension</p>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-primary transition-colors" />
@@ -162,15 +159,15 @@ export default function Navbar() {
 
           <button
             onClick={handleConnectDemo}
-            className="flex items-center justify-between p-4 rounded-xl border bg-card hover:border-accent hover:bg-secondary/5 transition-all text-left group"
+            className="flex items-center justify-between p-5 rounded-2xl border bg-card hover:border-accent/40 transition-all duration-200 text-left group"
           >
             <div className="flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/30 flex items-center justify-center text-accent group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-xl bg-amber-500/8 flex items-center justify-center text-accent transition-transform duration-200 group-hover:scale-110">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-semibold text-sm text-text-main">Demo Sandbox Mode</p>
-                <p className="text-xs text-text-muted">Instant preview sandbox using a test address</p>
+                <p className="font-semibold text-sm">Demo Sandbox</p>
+                <p className="text-xs text-text-muted mt-0.5">Preview with test data, no extension needed</p>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
@@ -178,7 +175,7 @@ export default function Navbar() {
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setConnectOpen(false)} className="rounded-lg">
+          <Button variant="ghost" onClick={() => setConnectOpen(false)} className="rounded-xl text-xs">
             Cancel
           </Button>
         </DialogFooter>
@@ -186,66 +183,47 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t p-4 space-y-2 bg-card">
-          <Link
-            href="/"
-            className="block px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-muted"
-            onClick={() => setMobileOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            href="/dashboard"
-            className="block px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-muted"
-            onClick={() => setMobileOpen(false)}
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/calculate"
-            className="block px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-muted"
-            onClick={() => setMobileOpen(false)}
-          >
-            Calculate
-          </Link>
-          <Link
-            href="/distribute"
-            className="block px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-muted"
-            onClick={() => setMobileOpen(false)}
-          >
-            Distribute
-          </Link>
-          {publicKey ? (
-            <div className="pt-2 border-t mt-2 space-y-2">
-              <div className="flex items-center gap-2 px-4 py-2">
-                <Activity className="w-4 h-4 text-text-muted" />
-                <span className="text-xs font-semibold text-text-muted truncate">
-                  {isDemo ? "Demo" : "Testnet"}: {publicKey}
-                </span>
+        <div className="md:hidden border-t p-4 space-y-1 bg-card animate-fade-in">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                pathname === link.href
+                  ? "bg-primary/8 text-primary"
+                  : "text-text-muted hover:bg-muted"
+              )}
+              onClick={() => setMobileOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div className="pt-3 border-t mt-3">
+            {publicKey ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 px-4 py-2">
+                  <Activity className="w-3.5 h-3.5 text-text-muted" />
+                  <span className="text-xs font-medium text-text-muted truncate">
+                    {isDemo ? "Demo" : "Testnet"}: {publicKey.slice(0, 10)}...
+                  </span>
+                </div>
+                <button
+                  onClick={() => { disconnectWallet(); setMobileOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
+                >
+                  Disconnect
+                </button>
               </div>
+            ) : (
               <button
-                onClick={() => {
-                  disconnectWallet();
-                  setMobileOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 rounded-lg text-sm font-bold text-destructive hover:bg-red-50 dark:hover:bg-red-950/20"
-              >
-                Disconnect Wallet
-              </button>
-            </div>
-          ) : (
-            <div className="pt-2 border-t mt-2">
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  setConnectOpen(true);
-                }}
-                className="w-full text-left px-4 py-2 rounded-lg text-sm font-bold text-primary hover:bg-primary-light"
+                onClick={() => { setMobileOpen(false); setConnectOpen(true); }}
+                className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
               >
                 Connect Wallet
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </header>
