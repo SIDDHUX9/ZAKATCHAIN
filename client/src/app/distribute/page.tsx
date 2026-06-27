@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useWallet } from "@/context/WalletContext";
+import { useContract } from "@/hooks/contract";
 import {
   Send,
   Users,
@@ -33,12 +34,13 @@ const CATEGORIES = [
   { id: "wayfarers", label: "Wayfarers", icon: Send, desc: "Travelers in need" },
 ];
 
-const DEFAULT_PERCENTAGE = 12.5; // 100% / 8 categories
+const DEFAULT_PERCENTAGE = 12.5;
 
-export default function DistributePage() {
+function DistributeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { publicKey, callContract, isConnecting } = useWallet();
+  const { publicKey } = useWallet();
+  const { recordDistribution } = useContract();
 
   const amountParam = searchParams.get("amount");
   const defaultAmount = amountParam ? parseFloat(amountParam) : 0;
@@ -84,8 +86,20 @@ export default function DistributePage() {
     }
     setIsSending(true);
     try {
-      const txHashDemo = "demo_" + Date.now().toString(36);
-      setTxHash(txHashDemo);
+      const cats = distribution
+        .filter((d) => d.amount > 0)
+        .map((d) => d.label)
+        .join(", ");
+      const txHash = "tx_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+      await recordDistribution(
+        publicKey,
+        BigInt(Math.round(totalAmount * 100)), // i128 in smallest unit
+        cats,
+        txHash
+      );
+
+      setTxHash(txHash);
       setShowPreview(false);
       setShowSuccess(true);
     } catch (err) {
@@ -103,7 +117,6 @@ export default function DistributePage() {
           Allocate your Zakat across the eight eligible categories
         </p>
 
-        {/* Amount Input */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Total Zakat Amount</CardTitle>
@@ -127,7 +140,6 @@ export default function DistributePage() {
           </CardContent>
         </Card>
 
-        {/* Distribution Mode */}
         <div className="flex gap-3 mb-6">
           <Button
             variant={mode === "equal" ? "default" : "outline"}
@@ -145,7 +157,6 @@ export default function DistributePage() {
           </Button>
         </div>
 
-        {/* Category Cards */}
         <div className="grid md:grid-cols-2 gap-4 mb-8">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
@@ -178,22 +189,14 @@ export default function DistributePage() {
                       />
                       <span className="text-sm text-text-muted">%</span>
                       <span className="text-sm font-semibold ml-auto">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                        }).format(catAmount)}
+                        ${catAmount.toFixed(2)}
                       </span>
                     </div>
                   )}
                   {mode === "equal" && (
                     <div className="mt-3 flex justify-between text-sm">
                       <span className="text-text-muted">{DEFAULT_PERCENTAGE}%</span>
-                      <span className="font-semibold">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                        }).format(catAmount)}
-                      </span>
+                      <span className="font-semibold">${catAmount.toFixed(2)}</span>
                     </div>
                   )}
                 </CardContent>
@@ -202,18 +205,12 @@ export default function DistributePage() {
           })}
         </div>
 
-        {/* Summary bar */}
         <Card className="mb-8">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-text-muted">Total Distribution</p>
-                <p className="text-xl font-bold">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(totalAmount)}
-                </p>
+                <p className="text-xl font-bold">${totalAmount.toFixed(2)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-text-muted">Allocated</p>
@@ -222,14 +219,12 @@ export default function DistributePage() {
             </div>
             {mode === "custom" && Math.abs(totalPercentage - 100) > 0.01 && (
               <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-                Total percentage is {totalPercentage.toFixed(1)}%. Please adjust
-                to reach 100%.
+                Total percentage is {totalPercentage.toFixed(1)}%. Please adjust to reach 100%.
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Action buttons */}
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={() => router.push("/calculate")}>
             Back to Calculator
@@ -245,7 +240,6 @@ export default function DistributePage() {
         </div>
       </div>
 
-      {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogHeader>
           <DialogTitle>Distribution Preview</DialogTitle>
@@ -253,49 +247,31 @@ export default function DistributePage() {
             Review your Zakat distribution across all categories
           </DialogDescription>
         </DialogHeader>
-
         <div className="space-y-3 max-h-80 overflow-y-auto">
           {distribution
             .filter((d) => d.amount > 0)
             .map((d) => {
               const Icon = d.icon;
               return (
-                <div
-                  key={d.id}
-                  className="flex items-center justify-between p-3 rounded-lg border"
-                >
+                <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div className="flex items-center gap-3">
                     <Icon className="w-4 h-4 text-primary" />
                     <span className="text-sm font-medium">{d.label}</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                      }).format(d.amount)}
-                    </p>
+                    <p className="text-sm font-semibold">${d.amount.toFixed(2)}</p>
                     <p className="text-xs text-text-muted">{d.percentage.toFixed(1)}%</p>
                   </div>
                 </div>
               );
             })}
         </div>
-
         <div className="flex justify-between pt-4 border-t mt-4">
           <span className="font-semibold">Total</span>
-          <span className="font-bold text-primary">
-            {new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-            }).format(totalAmount)}
-          </span>
+          <span className="font-bold text-primary">${totalAmount.toFixed(2)}</span>
         </div>
-
         <DialogFooter>
-          <Button variant="outline" onClick={() => setShowPreview(false)}>
-            Adjust
-          </Button>
+          <Button variant="outline" onClick={() => setShowPreview(false)}>Adjust</Button>
           <Button onClick={handleConfirm} disabled={isSending} className="gap-2">
             <Send className="w-4 h-4" />
             {isSending ? "Sending..." : "Confirm & Send"}
@@ -303,7 +279,6 @@ export default function DistributePage() {
         </DialogFooter>
       </Dialog>
 
-      {/* Success Dialog */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-emerald-600">
@@ -314,18 +289,11 @@ export default function DistributePage() {
             Your Zakat has been distributed on the Stellar network.
           </DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4 py-4">
           <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
             <p className="text-sm text-text-muted mb-1">Amount Distributed</p>
-            <p className="text-2xl font-bold text-emerald-700">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(totalAmount)}
-            </p>
+            <p className="text-2xl font-bold text-emerald-700">${totalAmount.toFixed(2)}</p>
           </div>
-
           <div className="space-y-2">
             <p className="text-sm font-medium">Transaction Hash</p>
             <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
@@ -341,7 +309,6 @@ export default function DistributePage() {
             </div>
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={() => { setShowSuccess(false); router.push("/history"); }}>
             View History
@@ -352,5 +319,19 @@ export default function DistributePage() {
         </DialogFooter>
       </Dialog>
     </div>
+  );
+}
+
+export default function DistributePage() {
+  return (
+    <Suspense fallback={
+      <div className="container-main py-8">
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <p className="text-text-muted">Loading...</p>
+        </div>
+      </div>
+    }>
+      <DistributeContent />
+    </Suspense>
   );
 }

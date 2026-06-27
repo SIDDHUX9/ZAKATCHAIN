@@ -40,14 +40,12 @@ export function useFreighter(): UseFreighterReturn {
     error: null,
   });
 
-  useEffect(() => {
-    checkFreighterConnection();
-  }, []);
-
-  const checkFreighterConnection = useCallback(async () => {
+  const checkFreighterStatus = useCallback(async () => {
     try {
-      const connected = await isConnected();
-      const allowed = await isAllowed();
+      const connectedRes = await isConnected();
+      const allowedRes = await isAllowed();
+      const connected = connectedRes.isConnected;
+      const allowed = allowedRes.isAllowed;
 
       let publicKey: string | null = null;
       if (connected && allowed) {
@@ -55,35 +53,39 @@ export function useFreighter(): UseFreighterReturn {
         publicKey = address;
       }
 
-      setState((prev) => ({
-        ...prev,
+      setState({
         isInstalled: connected,
         isAllowed: allowed,
         publicKey,
+        isConnecting: false,
         error: null,
-      }));
+      });
     } catch {
-      setState((prev) => ({
-        ...prev,
+      setState({
         isInstalled: false,
         isAllowed: false,
         publicKey: null,
+        isConnecting: false,
         error: null,
-      }));
+      });
     }
   }, []);
 
+  useEffect(() => {
+    checkFreighterStatus();
+  }, [checkFreighterStatus]);
+
   const checkConnection = useCallback(async (): Promise<boolean> => {
-    await checkFreighterConnection();
+    await checkFreighterStatus();
     return state.isInstalled && state.isAllowed && state.publicKey !== null;
-  }, [checkFreighterConnection, state.isInstalled, state.isAllowed, state.publicKey]);
+  }, [checkFreighterStatus, state.isInstalled, state.isAllowed, state.publicKey]);
 
   const connectWallet = useCallback(async (): Promise<string | null> => {
     setState((prev) => ({ ...prev, isConnecting: true, error: null }));
 
     try {
-      const connected = await isConnected();
-      if (!connected) {
+      const connectedRes = await isConnected();
+      if (!connectedRes.isConnected) {
         setState((prev) => ({
           ...prev,
           isConnecting: false,
@@ -92,21 +94,20 @@ export function useFreighter(): UseFreighterReturn {
         return null;
       }
 
-      const allowed = await isAllowed();
-      if (!allowed) {
+      const allowedRes = await isAllowed();
+      if (!allowedRes.isAllowed) {
         await setAllowed();
       }
 
       const { address } = await getAddress();
 
-      setState((prev) => ({
-        ...prev,
+      setState({
         isInstalled: true,
         isAllowed: true,
         publicKey: address,
         isConnecting: false,
         error: null,
-      }));
+      });
 
       return address;
     } catch (err: unknown) {

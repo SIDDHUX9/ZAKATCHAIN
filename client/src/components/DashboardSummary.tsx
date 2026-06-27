@@ -1,18 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wallet, DollarSign, TrendingUp } from "lucide-react";
 import { useWallet } from "@/context/WalletContext";
+import { useContract } from "@/hooks/contract";
 
 interface SummaryCardProps {
   title: string;
   value: string;
   subtitle?: string;
   icon: React.ElementType;
-  trend?: "up" | "down" | "neutral";
 }
 
-function SummaryCard({ title, value, subtitle, icon: Icon, trend }: SummaryCardProps) {
+function SummaryCard({ title, value, subtitle, icon: Icon }: SummaryCardProps) {
   return (
     <Card>
       <CardContent className="p-6">
@@ -35,25 +36,59 @@ function SummaryCard({ title, value, subtitle, icon: Icon, trend }: SummaryCardP
 
 export default function DashboardSummary() {
   const { publicKey } = useWallet();
+  const { getDonorTotal, getTotalDistributed } = useContract();
+  const [donorTotal, setDonorTotal] = useState<string>("--");
+  const [platformTotal, setPlatformTotal] = useState<string>("--");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        if (publicKey) {
+          const total = await getDonorTotal(publicKey);
+          setDonorTotal(
+            new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "USD",
+              maximumFractionDigits: 0,
+            }).format(Number(total))
+          );
+        }
+        const distributed = await getTotalDistributed();
+        setPlatformTotal(
+          new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 0,
+          }).format(Number(distributed))
+        );
+      } catch {
+        // Silent fail — show "--" if data can't be fetched
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [publicKey, getDonorTotal, getTotalDistributed]);
 
   const cards = [
     {
       title: "Total Wealth",
-      value: "$--",
-      subtitle: "Connected: " + (publicKey ? publicKey.slice(0, 8) + "..." : "N/A"),
+      value: loading ? "..." : donorTotal,
+      subtitle: publicKey ? `Wallet: ${publicKey.slice(0, 8)}...` : "Connect wallet to see",
       icon: Wallet,
     },
     {
-      title: "Zakat Due",
-      value: "$--",
-      subtitle: "2.5% of eligible assets",
-      icon: DollarSign,
+      title: "Platform Distributed",
+      value: loading ? "..." : platformTotal,
+      subtitle: "Total Zakat distributed via ZakatChain",
+      icon: TrendingUp,
     },
     {
-      title: "Distributed This Year",
-      value: "$--",
-      subtitle: "No distributions yet",
-      icon: TrendingUp,
+      title: "Your Giving",
+      value: loading ? "..." : donorTotal,
+      subtitle: publicKey ? "Your total distributions" : "Connect wallet to see",
+      icon: DollarSign,
     },
   ];
 
