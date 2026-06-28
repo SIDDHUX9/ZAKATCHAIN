@@ -1,6 +1,7 @@
 # ZakatChain
 
 > Automated Zakat calculation and distribution on the Stellar network.
+> smart contract address "CBZVYLQJKDHHSIB33MKDF2Z3EHTILULJIR3CBQHNW3RSASHOHTVQE42G"
 
 [![Stellar](https://img.shields.io/badge/Powered%20by-Stellar-3E38B0?logo=stellar&logoColor=white)](https://stellar.org)
 [![Freighter](https://img.shields.io/badge/Wallet-Freighter-1A56DB)](https://freighter.app)
